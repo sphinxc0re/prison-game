@@ -25,7 +25,7 @@ fn main() {
         for guar in &guard_vector {
             pris.add_guard(&guar)
         }
-        // TODO: Spawn thread here and move prisoner into it
+        // Spawn thread and move Prisoner into it
         thread::spawn(move|| {
             loop {
                 thread::sleep(Duration::new(2, 0));
@@ -36,6 +36,7 @@ fn main() {
     }
 
     for guar in guard_vector {
+        // Spawn thread and move guard into it
         thread::spawn(move|| {
             loop {
                 let message: Complaint = guar.complaint_receiver.recv().unwrap();
