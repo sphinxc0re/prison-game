@@ -1,3 +1,5 @@
+extern crate rand;
+
 mod guard;
 mod complaint;
 mod prisoner;
@@ -7,6 +9,7 @@ use complaint::Complaint;
 use prisoner::Prisoner;
 use std::thread;
 use std::time::Duration;
+use rand::Rng;
 
 fn main() {
     let guard_vector = vec![
@@ -28,8 +31,10 @@ fn main() {
         // Spawn thread and move Prisoner into it
         thread::spawn(move|| {
             loop {
-                thread::sleep(Duration::new(2, 0));
-                let comp = Complaint::new("food", 12, pris.name.clone());
+                let seconds = rand::thread_rng().gen_range(1, 5);
+                thread::sleep(Duration::new(seconds, 0));
+                let ammount = rand::thread_rng().gen_range(-20, 20);
+                let comp = Complaint::new("food", ammount, pris.name.clone());
                 pris.complain(comp);
             }
         });
@@ -40,8 +45,8 @@ fn main() {
         thread::spawn(move|| {
             loop {
                 let message: Complaint = guar.complaint_receiver.recv().unwrap();
-                println!("{:?}, {:?}, {:?}", message.need, message.ammount, message.prisoner_name);
+                println!("{:?} has a need for {:?}  {:?}", message.prisoner_name, message.need, message.ammount);
             }
-        });
+        }).join().unwrap();
     }
 }

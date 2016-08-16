@@ -5,6 +5,8 @@ use complaint::Complaint;
 
 
 
+pub type PrisonerVec = Vec<Prisoner>;
+
 pub struct Prisoner {
     pub name: String,
     guard_map: HashMap< String, Sender< Complaint > >,

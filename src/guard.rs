@@ -26,3 +26,5 @@ impl Guard {
         self.complaint_sender.clone()
     }
 }
+
+pub type GuardVec = Vec<Guard>;
