@@ -5,3 +5,4 @@ authors = ["Julian Laubstein <julian.laubstein@9elements.com>"]
 
 [dependencies]
 rand = "0.3.14"
+yaml-rust = "0.3.3"
