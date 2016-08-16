@@ -12,11 +12,14 @@ use std::time::Duration;
 use rand::Rng;
 
 fn main() {
-    let guard_vector = vec![
-        Guard::new("food"),
-        Guard::new("health"),
-        Guard::new("sleep"),
+    let guard_needs = vec![
+        "food",
+        "health",
+        "love",
+        "freedom",
     ];
+
+    let guard_vector = Guard::new_vec(guard_needs);
 
     let prisoner_vector = vec![
         Prisoner::new("Henry"),

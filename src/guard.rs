@@ -22,6 +22,12 @@ impl Guard {
         }
     }
 
+    pub fn new_vec(need_vec: Vec<&str>) -> GuardVec {
+        need_vec.into_iter().map(|need| {
+            Guard::new(need)
+        }).collect()
+    }
+
     pub fn get_complaint_sender(&self) -> Sender<Complaint> {
         self.complaint_sender.clone()
     }
