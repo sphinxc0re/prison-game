@@ -21,6 +21,12 @@ impl Prisoner {
         self.guard_map.insert(guard.need.clone(), guard.get_complaint_sender());
     }
 
+    pub fn new_vec(name_vec: Vec<&str>) -> PrisonerVec {
+        name_vec.into_iter().map(|name| {
+            Prisoner::new(name)
+        }).collect()
+    }
+
     pub fn new(name: &str) -> Prisoner {
         Prisoner {
             name: name.to_string(),

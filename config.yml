@@ -1,0 +1,8 @@
+needs:
+  - food
+  - health
+
+prisoners:
+  - Henry
+  - Alfred
+  - Nelson
