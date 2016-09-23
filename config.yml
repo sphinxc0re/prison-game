@@ -1,6 +1,9 @@
 needs:
   - food
   - health
+  - freedom
+  - literacy
+  - clothing
 
 prisoners:
   - Courtney
