@@ -1,3 +1,5 @@
+// This is basically defining the structure for the messages passed between the prisoner and
+// guard threads.
 pub struct Complaint {
     pub need: String,
     pub ammount: i8,
