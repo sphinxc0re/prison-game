@@ -64,7 +64,7 @@ fn main() {
         // the prisoners complaints
         thread::spawn(move|| {
             loop {
-                let message: Complaint = guar.complaint_receiver.recv().unwrap();
+                let message: Complaint = guar.wait_for_and_receive_complaint();
                 println!("{:?} has a need for {:?} for an ammount of {:?}", message.prisoner_name, message.need, message.ammount);
             }
         }).join().unwrap();

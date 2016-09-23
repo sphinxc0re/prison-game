@@ -1,3 +1,5 @@
+/// This is a general utils module for abtstraction of simple computations.
+
 use yaml_rust::yaml::Yaml;
 
 
