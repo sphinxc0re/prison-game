@@ -62,7 +62,7 @@ fn main() {
         });
     }
 
-    for guar in guard_vector {
+    let handlers: Vec<_> = guard_vector.into_iter().map(|guar| {
         // Spawn thread and move guard into it. Afterwards, the guard is set up to listen to
         // the prisoners complaints
         thread::spawn(move|| {
@@ -70,6 +70,10 @@ fn main() {
                 let message: Complaint = guar.wait_for_and_receive_complaint();
                 println!("{:?} has a need for {:?} for an ammount of {:?}", message.prisoner_name, message.need, message.ammount);
             }
-        }).join().unwrap();
+        })
+    }).collect();
+
+    for handle in handlers {
+        handle.join().unwrap();
     }
 }
