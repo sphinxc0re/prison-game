@@ -37,9 +37,9 @@ impl Prisoner {
     /// ];
     ///
     /// let prisoner_vector = Prisoner::new_vec(name_vec);
-    pub fn new_vec(name_vec: Vec<&str>) -> PrisonerVec {
+    pub fn new_vec(name_vec: Vec<String>) -> PrisonerVec {
         name_vec.into_iter().map(|name| {
-            Prisoner::new(name)
+            Prisoner::new(name.as_str())
         }).collect()
     }
 

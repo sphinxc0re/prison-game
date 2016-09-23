@@ -33,10 +33,10 @@ fn main() {
 
     // To be consistent, we save the names of the prisoners and their needs to seperate variables.
     // This way, we are able to use them in further production.
-    let guard_needs: Vec<&str> = utils::str_vec_from_yaml_vec(&doc["needs"]);
-    let guard_vector: guard::GuardVec = Guard::new_vec(guard_needs);
+    let guard_needs: Vec<String> = utils::str_vec_from_yaml_vec(doc["needs"].clone());
+    let guard_vector: guard::GuardVec = Guard::new_vec(guard_needs.clone());
 
-    let prisoner_names: Vec<&str> = utils::str_vec_from_yaml_vec(&doc["prisoners"]);
+    let prisoner_names: Vec<String> = utils::str_vec_from_yaml_vec(doc["prisoners"].clone());
     let prisoner_vector: prisoner::PrisonerVec = Prisoner::new_vec(prisoner_names);
 
     for mut prisoner in prisoner_vector {
@@ -46,6 +46,8 @@ fn main() {
             prisoner.add_guard(&guar)
         }
 
+        let need_vec = guard_needs.clone();
+
         // Spawn thread and move prisoner into it. Afterwards, the prisoner is set up to produce
         // complaints at random to send them to the respective guard to handle it.
         thread::spawn(move|| {
@@ -53,7 +55,8 @@ fn main() {
                 let seconds = rand::thread_rng().gen_range(1, 5);
                 thread::sleep(Duration::new(seconds, 0));
                 let ammount = rand::thread_rng().gen_range(-20, 20);
-                let comp = Complaint::new("food", ammount, prisoner.name.clone());
+                let need_idx = rand::thread_rng().gen_range(0, need_vec.len());
+                let comp = Complaint::new(need_vec[need_idx].as_str(), ammount, prisoner.name.clone());
                 prisoner.complain(comp);
             }
         });

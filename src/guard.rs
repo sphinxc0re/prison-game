@@ -45,9 +45,9 @@ impl Guard {
     ///
     /// let guard_vec = Guard::new_vec(need_vec);
     /// ```
-    pub fn new_vec(need_vec: Vec<&str>) -> GuardVec {
+    pub fn new_vec(need_vec: Vec<String>) -> GuardVec {
         need_vec.into_iter().map(|need| {
-            Guard::new(need)
+            Guard::new(need.as_str())
         }).collect()
     }
 
