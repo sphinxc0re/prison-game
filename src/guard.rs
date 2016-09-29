@@ -38,9 +38,9 @@ impl Guard {
     /// # Examples
     /// ```
     /// let need_vec = vec![
-    ///     "health",
-    ///     "food",
-    ///     "freedom",
+    ///     "health".to_string(),
+    ///     "food".to_string(),
+    ///     "freedom".to_string(),
     /// ];
     ///
     /// let guard_vec = Guard::new_vec(need_vec);

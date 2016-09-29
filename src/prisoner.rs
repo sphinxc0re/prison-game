@@ -31,9 +31,9 @@ impl Prisoner {
     /// # Examples
     ///
     /// let name_vector = vec![
-    ///     "Alfred",
-    ///     "Jim",
-    ///     "Henry",
+    ///     "Alfred".to_string(),
+    ///     "Jim".to_string(),
+    ///     "Henry".to_string(),
     /// ];
     ///
     /// let prisoner_vector = Prisoner::new_vec(name_vec);
