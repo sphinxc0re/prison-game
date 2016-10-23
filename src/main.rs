@@ -52,23 +52,30 @@ fn main() {
         // complaints at random to send them to the respective guard to handle it.
         thread::spawn(move|| {
             loop {
-                let seconds = rand::thread_rng().gen_range(1, 5);
-                thread::sleep(Duration::new(seconds, 0));
-                let ammount = rand::thread_rng().gen_range(-20, 20);
-                let need_idx = rand::thread_rng().gen_range(0, need_vec.len());
+                let mut rng = rand::thread_rng();
+                let seconds = (&mut rng).gen_range(1, 5);
+                let nanos = (&mut rng).gen_range(1, 1000000000);
+                thread::sleep(Duration::new(seconds, nanos));
+                let ammount = (&mut rng).gen_range(-20, 20);
+                let need_idx = (&mut rng).gen_range(0, need_vec.len());
                 let comp = Complaint::new(need_vec[need_idx].as_str(), ammount, prisoner.name.clone());
                 prisoner.complain(comp);
             }
         });
     }
 
-    let handlers: Vec<_> = guard_vector.into_iter().map(|guar| {
+    let handlers: Vec<_> = guard_vector.into_iter().map(|mut guar| {
         // Spawn thread and move guard into it. Afterwards, the guard is set up to listen to
         // the prisoners complaints
         thread::spawn(move|| {
             loop {
                 let message: Complaint = guar.wait_for_and_receive_complaint();
-                println!("{:?} has a need for {:?} for an ammount of {:?}", message.prisoner_name, message.need, message.ammount);
+                let new_ammount = guar.track_complaint(&message);
+                if new_ammount > 100 {
+                    println!("===> {:?} died, because the need for {:?} was too high!", message.prisoner_name, message.need);
+                } else {
+                    println!("{:?} has a need for {:?} for an ammount of {:?}, total is {:?}", message.prisoner_name, message.need, message.ammount, new_ammount);
+                }
             }
         })
     }).collect();

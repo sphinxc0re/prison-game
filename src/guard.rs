@@ -1,6 +1,7 @@
 use complaint::Complaint;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Receiver;
+use std::collections::HashMap;
 use std::sync::mpsc::Sender;
 
 
@@ -14,7 +15,9 @@ pub struct Guard {
     /// The receiver of the channel, typed
     complaint_receiver: Receiver<Complaint>,
     /// The need, the guard is able to satisfy
-    pub need: String
+    pub need: String,
+    /// A map to keep track of the needs of the prisoners
+    complaint_stats: HashMap< String, i8>
 }
 
 impl Guard {
@@ -29,7 +32,8 @@ impl Guard {
         Guard {
             complaint_sender: snd,
             complaint_receiver: rec,
-            need: need.to_string()
+            need: need.to_string(),
+            complaint_stats: HashMap::new()
         }
     }
 
@@ -59,5 +63,13 @@ impl Guard {
     /// Waits for a new complaint to be sent and returns it
     pub fn wait_for_and_receive_complaint(&self) -> Complaint {
         self.complaint_receiver.recv().unwrap()
+    }
+
+    pub fn track_complaint(&mut self, complaint: &Complaint) -> i8 {
+        let prisoner_name = complaint.prisoner_name.clone();
+        let ammount = complaint.ammount.clone();
+        let original_ammount = self.complaint_stats.entry(prisoner_name).or_insert(0);
+        *original_ammount += ammount;
+        *original_ammount
     }
 }
