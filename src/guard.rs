@@ -61,8 +61,8 @@ impl Guard {
     }
 
     /// Waits for a new complaint to be sent and returns it
-    pub fn wait_for_and_receive_complaint(&self) -> Complaint {
-        self.complaint_receiver.recv().unwrap()
+    pub fn wait_for_and_receive_complaint(&self) -> Option<Complaint> {
+        self.complaint_receiver.recv().ok()
     }
 
     pub fn track_complaint(&mut self, complaint: &Complaint) -> i8 {

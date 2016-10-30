@@ -8,8 +8,11 @@ pub fn str_vec_from_yaml_vec<'a>(need_vec: Yaml) -> Vec<String> {
     .as_vec()
     .unwrap()
     .iter()
-    .map(|e| {
-        String::from(e.as_str().unwrap())
+    .map(|element| {
+        element
+        .as_str()
+        .unwrap()
+        .to_string()
     })
     .collect()
 }
