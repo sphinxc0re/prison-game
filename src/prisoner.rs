@@ -1,4 +1,5 @@
-use message::Message;
+use mp::Message;
+use mp::Envelope;
 use guard::Guard;
 use std::collections::HashMap;
 use std::sync::mpsc::Sender;
@@ -15,20 +16,20 @@ pub struct Prisoner {
     /// The name of the prisoner
     pub name: String,
     /// A hashmap mapping a need to the respective sender object of the guard
-    guard_map: HashMap<String, Sender<Message>>,
+    guard_map: HashMap<String, Sender<Envelope>>,
     /// The sender of the channel, typed
-    sender: Sender<Message>,
+    sender: Sender<Envelope>,
     /// The receiver of the channel, typed
-    receiver: Receiver<Message>,
+    receiver: Receiver<Envelope>,
 }
 
 impl Prisoner {
     /// Sends a complaint to the respective guard
     pub fn complain(&self, complaint: Message) {
         match complaint {
-            Message::Complain(ref need, ref ammount, ref prisoner_name, ref sender) => {
-                let actual_complaint = Message::Complain(need.clone(), ammount.clone(), prisoner_name.clone(), sender.clone());
-                self.guard_map[need].send(actual_complaint).unwrap();
+            Message::Complain(ref need, ref ammount, ref prisoner_name) => {
+                let envelope = Envelope::new(Message::Complain(need.clone(), ammount.clone(), prisoner_name.clone()), self.get_sender());
+                self.guard_map[need].send(envelope).unwrap();
             },
             other => panic!("Prisoner is unable to send message of type: {:?}", other)
         }
@@ -56,12 +57,12 @@ impl Prisoner {
         }).collect()
     }
 
-    pub fn wait_for_and_receive_message(&self) -> Option<Message> {
+    pub fn wait_for_and_receive_message(&self) -> Option<Envelope> {
         self.receiver.recv().ok()
     }
 
     /// Returns a copy of the message sender
-    pub fn get_sender(&self) -> Sender<Message> {
+    pub fn get_sender(&self) -> Sender<Envelope> {
         self.sender.clone()
     }
 
