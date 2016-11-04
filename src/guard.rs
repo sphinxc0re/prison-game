@@ -11,14 +11,14 @@ use std::sync::mpsc::Sender;
 pub type GuardVec = Vec<Guard>;
 
 pub struct Guard {
-    /// The sender of the channel, typed
+    /// The sender channel of the guard, typed
     sender: Sender<Envelope>,
-    /// The receiver of the channel, typed
+    /// The receiver channel of the guard, typed
     receiver: Receiver<Envelope>,
     /// The need, the guard is able to satisfy
     pub need: String,
     /// A map to keep track of the needs of the prisoners
-    complaint_stats: HashMap<String, i8>
+    prisoner_need_stats: HashMap<String, i8>
 }
 
 impl Guard {
@@ -34,7 +34,7 @@ impl Guard {
             sender: snd,
             receiver: rec,
             need: need.to_string(),
-            complaint_stats: HashMap::new()
+            prisoner_need_stats: HashMap::new()
         }
     }
 
@@ -70,7 +70,7 @@ impl Guard {
     pub fn track_complaint(&mut self, complaint: &Message) -> i8 {
         match complaint {
             &Message::Complain(_, ref ammount, ref prisoner_name) => {
-                let original_ammount = self.complaint_stats.entry((*prisoner_name).clone()).or_insert(0);
+                let original_ammount = self.prisoner_need_stats.entry((*prisoner_name).clone()).or_insert(0);
                 *original_ammount += *ammount;
                 *original_ammount
             },

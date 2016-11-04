@@ -17,9 +17,9 @@ pub struct Prisoner {
     pub name: String,
     /// A hashmap mapping a need to the respective sender object of the guard
     guard_map: HashMap<String, Sender<Envelope>>,
-    /// The sender of the channel, typed
+    /// The sender channel of the prisoner, typed
     sender: Sender<Envelope>,
-    /// The receiver of the channel, typed
+    /// The receiver channel of the prisoner, typed
     receiver: Receiver<Envelope>,
 }
 
