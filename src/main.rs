@@ -4,10 +4,11 @@ extern crate yaml_rust;
 mod guard;
 mod prisoner;
 mod utils;
-mod message;
+mod mp;
 
 use guard::Guard;
-use message::Message;
+use mp::Message;
+use mp::Envelope;
 use prisoner::Prisoner;
 use std::thread;
 use std::time::Duration;
@@ -58,11 +59,12 @@ fn main() {
                 thread::sleep(Duration::new(seconds, nanos));
                 let ammount = (&mut rng).gen_range(-20, 20);
                 let need_index = (&mut rng).gen_range(0, need_vec.len());
-                let comp = Message::Complain(need_vec[need_index].clone(), ammount, prisoner.name.clone(), prisoner.get_sender());
+                let comp = Message::Complain(need_vec[need_index].clone(), ammount, prisoner.name.clone());
                 prisoner.complain(comp);
-                let answer = prisoner.wait_for_and_receive_message();
-                match answer {
-                    Some(message) => {
+                let envelope = prisoner.wait_for_and_receive_message();
+                match envelope {
+                    Some(input_envelope) => {
+                        let message = input_envelope.message;
                         match message {
                             Message::Kill => break,
                             Message::NoAction => continue,
@@ -80,18 +82,21 @@ fn main() {
         // the prisoners complaints
         thread::spawn(move|| {
             loop {
-                let opt_message: Option<Message> = guar.wait_for_and_receive_message();
+                let opt_message: Option<Envelope> = guar.wait_for_and_receive_message();
                 match opt_message {
-                    Some(message) => {
+                    Some(input_envelope) => {
+                        let Envelope { return_sender, message } = input_envelope;
                         match message {
-                            Message::Complain(ref need, ref ammount, ref prisoner_name, ref sender) => {
+                            Message::Complain(ref need, ref ammount, ref prisoner_name) => {
                                 let new_ammount = guar.track_complaint(&message);
                                 if new_ammount.abs() > 100 {
                                     println!("===> {:?} died, because the need for {:?} was out of bounds!", prisoner_name, need);
-                                    sender.send(Message::Kill).expect("Message could not be sent");
+                                    let envelope = Envelope::new(Message::Kill, guar.get_sender());
+                                    return_sender.send(envelope).expect("Message could not be sent");
                                 } else {
                                     println!("{:?} has a need for {:?} for an ammount of {:?}, total is {:?}", prisoner_name, need, ammount, new_ammount);
-                                    sender.send(Message::NoAction).expect("Message could not be sent");
+                                    let envelope = Envelope::new(Message::NoAction, guar.get_sender());
+                                    return_sender.send(envelope).expect("Message could not be sent");
                                 }
                             },
                             other => panic!("Guard is unable to handle message of type: {:?}", other)
