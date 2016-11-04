@@ -1,4 +1,4 @@
-use complaint::Complaint;
+use message::Message;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Receiver;
 use std::collections::HashMap;
@@ -11,13 +11,13 @@ pub type GuardVec = Vec<Guard>;
 
 pub struct Guard {
     /// The sender of the channel, typed
-    complaint_sender: Sender<Complaint>,
+    sender: Sender<Message>,
     /// The receiver of the channel, typed
-    complaint_receiver: Receiver<Complaint>,
+    receiver: Receiver<Message>,
     /// The need, the guard is able to satisfy
     pub need: String,
     /// A map to keep track of the needs of the prisoners
-    complaint_stats: HashMap< String, i8>
+    complaint_stats: HashMap<String, i8>
 }
 
 impl Guard {
@@ -30,8 +30,8 @@ impl Guard {
     pub fn new(need: &str) -> Guard {
         let (snd, rec) = channel();
         Guard {
-            complaint_sender: snd,
-            complaint_receiver: rec,
+            sender: snd,
+            receiver: rec,
             need: need.to_string(),
             complaint_stats: HashMap::new()
         }
@@ -51,25 +51,29 @@ impl Guard {
     /// ```
     pub fn new_vec(need_vec: Vec<String>) -> GuardVec {
         need_vec.into_iter().map(|need| {
-            Guard::new(need.as_str())
+            Self::new(need.as_str())
         }).collect()
     }
 
     /// Returns a copy of the complaint sender
-    pub fn get_complaint_sender(&self) -> Sender<Complaint> {
-        self.complaint_sender.clone()
+    pub fn get_sender(&self) -> Sender<Message> {
+        self.sender.clone()
     }
 
     /// Waits for a new complaint to be sent and returns it
-    pub fn wait_for_and_receive_complaint(&self) -> Complaint {
-        self.complaint_receiver.recv().unwrap()
+    pub fn wait_for_and_receive_message(&self) -> Option<Message> {
+        self.receiver.recv().ok()
     }
 
-    pub fn track_complaint(&mut self, complaint: &Complaint) -> i8 {
-        let prisoner_name = complaint.prisoner_name.clone();
-        let ammount = complaint.ammount.clone();
-        let original_ammount = self.complaint_stats.entry(prisoner_name).or_insert(0);
-        *original_ammount += ammount;
-        *original_ammount
+    /// track a prisoners stats per need
+    pub fn track_complaint(&mut self, complaint: &Message) -> i8 {
+        match complaint {
+            &Message::Complain(_, ref ammount, ref prisoner_name, _) => {
+                let original_ammount = self.complaint_stats.entry((*prisoner_name).clone()).or_insert(0);
+                *original_ammount += *ammount;
+                *original_ammount
+            },
+            _ => unreachable!()
+        }
     }
 }

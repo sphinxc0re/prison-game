@@ -2,12 +2,12 @@ extern crate rand;
 extern crate yaml_rust;
 
 mod guard;
-mod complaint;
 mod prisoner;
 mod utils;
+mod message;
 
 use guard::Guard;
-use complaint::Complaint;
+use message::Message;
 use prisoner::Prisoner;
 use std::thread;
 use std::time::Duration;
@@ -57,9 +57,20 @@ fn main() {
                 let nanos = (&mut rng).gen_range(1, 1000000000);
                 thread::sleep(Duration::new(seconds, nanos));
                 let ammount = (&mut rng).gen_range(-20, 20);
-                let need_idx = (&mut rng).gen_range(0, need_vec.len());
-                let comp = Complaint::new(need_vec[need_idx].as_str(), ammount, prisoner.name.clone());
+                let need_index = (&mut rng).gen_range(0, need_vec.len());
+                let comp = Message::Complain(need_vec[need_index].clone(), ammount, prisoner.name.clone(), prisoner.get_sender());
                 prisoner.complain(comp);
+                let answer = prisoner.wait_for_and_receive_message();
+                match answer {
+                    Some(message) => {
+                        match message {
+                            Message::Kill => break,
+                            Message::NoAction => continue,
+                            other => panic!("Prisoner is unable to handle message of type: {:?}", other)
+                        }
+                    },
+                    None => unreachable!()
+                }
             }
         });
     }
@@ -69,12 +80,26 @@ fn main() {
         // the prisoners complaints
         thread::spawn(move|| {
             loop {
-                let message: Complaint = guar.wait_for_and_receive_complaint();
-                let new_ammount = guar.track_complaint(&message);
-                if new_ammount > 100 {
-                    println!("===> {:?} died, because the need for {:?} was too high!", message.prisoner_name, message.need);
-                } else {
-                    println!("{:?} has a need for {:?} for an ammount of {:?}, total is {:?}", message.prisoner_name, message.need, message.ammount, new_ammount);
+                let opt_message: Option<Message> = guar.wait_for_and_receive_message();
+                match opt_message {
+                    Some(message) => {
+                        match message {
+                            Message::Complain(ref need, ref ammount, ref prisoner_name, ref sender) => {
+                                let new_ammount = guar.track_complaint(&message);
+                                if new_ammount.abs() > 100 {
+                                    println!("===> {:?} died, because the need for {:?} was out of bounds!", prisoner_name, need);
+                                    sender.send(Message::Kill).expect("Message could not be sent");
+                                } else {
+                                    println!("{:?} has a need for {:?} for an ammount of {:?}, total is {:?}", prisoner_name, need, ammount, new_ammount);
+                                    sender.send(Message::NoAction).expect("Message could not be sent");
+                                }
+                            },
+                            other => panic!("Guard is unable to handle message of type: {:?}", other)
+                        }
+                    },
+                    None => {
+                        unreachable!();
+                    }
                 }
             }
         })
