@@ -69,7 +69,7 @@ impl Guard {
     /// track a prisoners stats per need
     pub fn track_complaint(&mut self, complaint: &Message) -> i8 {
         match complaint {
-            &Message::Complain(_, ref ammount, ref prisoner_name) => {
+            &Message::Complain { need: _, ref ammount, ref prisoner_name } => {
                 let original_ammount = self.prisoner_need_stats.entry((*prisoner_name).clone()).or_insert(0);
                 *original_ammount += *ammount;
                 *original_ammount

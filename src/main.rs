@@ -65,7 +65,7 @@ fn main() {
                 thread::sleep(Duration::from_millis(millis));
                 let ammount = (&mut rng).gen_range(-20, 20);
                 let need_index = (&mut rng).gen_range(0, need_vec.len());
-                let comp = Message::Complain(need_vec[need_index].clone(), ammount, prisoner.name.clone());
+                let comp = Message::Complain { need: need_vec[need_index].clone(), ammount: ammount, prisoner_name: prisoner.name.clone() };
                 prisoner.complain(comp);
                 let envelope = prisoner.receive_message();
                 match envelope {
@@ -99,7 +99,7 @@ fn main() {
                     Some(input_envelope) => {
                         let Envelope { return_sender, message } = input_envelope;
                         match message {
-                            Message::Complain(ref need, ref ammount, ref prisoner_name) => {
+                            Message::Complain { ref need, ref ammount, ref prisoner_name } => {
                                 let new_ammount = guar.track_complaint(&message);
                                 if new_ammount.abs() > 100 {
                                     let envelope = Envelope::new(Message::Kill, guar.get_sender());

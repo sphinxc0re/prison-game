@@ -8,7 +8,7 @@ pub enum Message {
     NoAction,
     Dead(String),
     Alive(String),
-    Complain(String, i8, String)
+    Complain { need: String, ammount: i8, prisoner_name: String }
 }
 
 #[derive(Debug)]

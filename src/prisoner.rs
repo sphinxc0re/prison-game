@@ -27,8 +27,9 @@ impl Prisoner {
     /// Sends a complaint to the respective guard
     pub fn complain(&self, complaint: Message) {
         match complaint {
-            Message::Complain(ref need, ref ammount, ref prisoner_name) => {
-                let envelope = Envelope::new(Message::Complain(need.clone(), ammount.clone(), prisoner_name.clone()), self.get_sender());
+            Message::Complain { ref need, ref ammount, ref prisoner_name } => {
+                let message = Message::Complain { need: need.clone(), ammount: ammount.clone(), prisoner_name: prisoner_name.clone() };
+                let envelope = Envelope::new(message, self.get_sender());
                 self.guard_map[need].send(envelope).unwrap();
             },
             other => panic!("Prisoner is unable to send message of type: {:?}", other)
