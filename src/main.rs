@@ -4,10 +4,11 @@ extern crate yaml_rust;
 mod guard;
 mod prisoner;
 mod utils;
-mod message;
+mod mp;
 
 use guard::Guard;
-use message::Message;
+use mp::Message;
+use mp::Envelope;
 use prisoner::Prisoner;
 use std::thread;
 use std::time::Duration;
@@ -15,6 +16,7 @@ use rand::Rng;
 use yaml_rust::YamlLoader;
 use std::fs::File;
 use std::io::prelude::*;
+use std::sync::{Arc, Barrier};
 
 fn main() {
     // The ammount and type of the prisoners needs as well as the names of the prisoners are
@@ -37,7 +39,9 @@ fn main() {
     let guard_vector: guard::GuardVec = Guard::new_vec(guard_needs.clone());
 
     let prisoner_names: Vec<String> = utils::str_vec_from_yaml_vec(doc["prisoners"].clone());
-    let prisoner_vector: prisoner::PrisonerVec = Prisoner::new_vec(prisoner_names);
+    let prisoner_vector: prisoner::PrisonerVec = Prisoner::new_vec(prisoner_names.clone());
+
+    let start_barrier = Arc::new(Barrier::new(prisoner_names.len() + guard_needs.len()));
 
     for mut prisoner in prisoner_vector {
         // Since each prisoner has to have a connection to each guard, a copy of every guard sender
@@ -48,23 +52,30 @@ fn main() {
 
         let need_vec = guard_needs.clone();
 
+        let prisoners_barrier = start_barrier.clone();
+
         // Spawn thread and move prisoner into it. Afterwards, the prisoner is set up to produce
         // complaints at random to send them to the respective guard to handle it.
-        thread::spawn(move|| {
+        thread::Builder::new().name(prisoner.name.clone() + "_thread").spawn(move|| {
+            prisoner.broadcast_alive();
+            prisoners_barrier.wait();
             loop {
                 let mut rng = rand::thread_rng();
-                let seconds = (&mut rng).gen_range(1, 5);
-                let nanos = (&mut rng).gen_range(1, 1000000000);
-                thread::sleep(Duration::new(seconds, nanos));
+                let millis = (&mut rng).gen_range(1, 1000);
+                thread::sleep(Duration::from_millis(millis));
                 let ammount = (&mut rng).gen_range(-20, 20);
                 let need_index = (&mut rng).gen_range(0, need_vec.len());
-                let comp = Message::Complain(need_vec[need_index].clone(), ammount, prisoner.name.clone(), prisoner.get_sender());
+                let comp = Message::Complain(need_vec[need_index].clone(), ammount, prisoner.name.clone());
                 prisoner.complain(comp);
-                let answer = prisoner.wait_for_and_receive_message();
-                match answer {
-                    Some(message) => {
+                let envelope = prisoner.receive_message();
+                match envelope {
+                    Some(input_envelope) => {
+                        let message = input_envelope.message;
                         match message {
-                            Message::Kill => break,
+                            Message::Kill => {
+                                prisoner.broadcast_dead();
+                                break;
+                            },
                             Message::NoAction => continue,
                             other => panic!("Prisoner is unable to handle message of type: {:?}", other)
                         }
@@ -72,37 +83,51 @@ fn main() {
                     None => unreachable!()
                 }
             }
-        });
+        }).unwrap();
     }
 
     let handlers: Vec<_> = guard_vector.into_iter().map(|mut guar| {
+        let guard_barrier = start_barrier.clone();
+
         // Spawn thread and move guard into it. Afterwards, the guard is set up to listen to
         // the prisoners complaints
-        thread::spawn(move|| {
+        thread::Builder::new().name(guar.need.clone() + "_thread").spawn(move|| {
+            guard_barrier.wait();
             loop {
-                let opt_message: Option<Message> = guar.wait_for_and_receive_message();
+                let opt_message: Option<Envelope> = guar.receive_message();
                 match opt_message {
-                    Some(message) => {
+                    Some(input_envelope) => {
+                        let Envelope { return_sender, message } = input_envelope;
                         match message {
-                            Message::Complain(ref need, ref ammount, ref prisoner_name, ref sender) => {
+                            Message::Complain(ref need, ref ammount, ref prisoner_name) => {
                                 let new_ammount = guar.track_complaint(&message);
                                 if new_ammount.abs() > 100 {
-                                    println!("===> {:?} died, because the need for {:?} was out of bounds!", prisoner_name, need);
-                                    sender.send(Message::Kill).expect("Message could not be sent");
+                                    let envelope = Envelope::new(Message::Kill, guar.get_sender());
+                                    return_sender.send(envelope).expect("Message could not be sent");
                                 } else {
                                     println!("{:?} has a need for {:?} for an ammount of {:?}, total is {:?}", prisoner_name, need, ammount, new_ammount);
-                                    sender.send(Message::NoAction).expect("Message could not be sent");
+                                    let envelope = Envelope::new(Message::NoAction, guar.get_sender());
+                                    return_sender.send(envelope).expect("Message could not be sent");
                                 }
+                            },
+                            Message::Dead(prisoner_name) => {
+                                guar.untrack_prisoner(&prisoner_name);
+                                println!("{} died", prisoner_name);
+                                if guar.tracked_prisoners() == 0 {
+                                    break;
+                                }
+                            },
+                            Message::Alive(prisoner_name) => {
+                                guar.track_prisoner(&prisoner_name);
+                                println!("{} is registered to be alive", prisoner_name);
                             },
                             other => panic!("Guard is unable to handle message of type: {:?}", other)
                         }
                     },
-                    None => {
-                        unreachable!();
-                    }
+                    None => unreachable!()
                 }
             }
-        })
+        }).unwrap()
     }).collect();
 
     for handle in handlers {
