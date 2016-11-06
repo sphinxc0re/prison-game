@@ -66,7 +66,10 @@ fn main() {
                     Some(input_envelope) => {
                         let message = input_envelope.message;
                         match message {
-                            Message::Kill => break,
+                            Message::Kill => {
+                                prisoner.broadcast_dead();
+                                break;
+                            },
                             Message::NoAction => continue,
                             other => panic!("Prisoner is unable to handle message of type: {:?}", other)
                         }
@@ -99,6 +102,12 @@ fn main() {
                                     return_sender.send(envelope).expect("Message could not be sent");
                                 }
                             },
+                            Message::Died(prisoner_name) => {
+                                guar.untrack_prisoner(&prisoner_name);
+                                if guar.tracked_prisoners() == 0 {
+                                    break;
+                                }
+                            }
                             other => panic!("Guard is unable to handle message of type: {:?}", other)
                         }
                     },

@@ -77,4 +77,12 @@ impl Guard {
             _ => unreachable!()
         }
     }
+
+    pub fn untrack_prisoner(&mut self, name: &String) {
+        self.prisoner_need_stats.remove(name);
+    }
+
+    pub fn tracked_prisoners(&self) -> usize {
+        self.prisoner_need_stats.len()
+    }
 }

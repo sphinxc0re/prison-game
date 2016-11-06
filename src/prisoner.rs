@@ -66,6 +66,13 @@ impl Prisoner {
         self.sender.clone()
     }
 
+    pub fn broadcast_dead(&self) {
+        for ref mut guard in self.guard_map.values().into_iter() {
+            let envelope = Envelope::new(Message::Died(self.name.clone()), self.get_sender());
+            guard.send(envelope).expect("Message could not be sent");
+        }
+    }
+
     /// Constructs a new `Prisoner`
     ///
     /// # Examples

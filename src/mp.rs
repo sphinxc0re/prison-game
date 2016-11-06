@@ -6,9 +6,11 @@ use std::sync::mpsc::Sender;
 pub enum Message {
     Kill,
     NoAction,
+    Died(String),
     Complain(String, i8, String)
 }
 
+#[derive(Debug)]
 pub struct Envelope {
     pub message: Message,
     pub return_sender: Sender<Envelope>
