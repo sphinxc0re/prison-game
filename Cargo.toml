@@ -1,6 +1,6 @@
 [package]
 name = "prisoners"
-version = "0.2.0"
+version = "0.3.2"
 authors = ["Julian Laubstein <julian.laubstein@9elements.com>"]
 
 [dependencies]
