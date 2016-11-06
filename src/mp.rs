@@ -6,7 +6,8 @@ use std::sync::mpsc::Sender;
 pub enum Message {
     Kill,
     NoAction,
-    Died(String),
+    Dead(String),
+    Alive(String),
     Complain(String, i8, String)
 }
 

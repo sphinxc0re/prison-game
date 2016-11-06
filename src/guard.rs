@@ -62,7 +62,7 @@ impl Guard {
     }
 
     /// Waits for a new complaint to be sent and returns it
-    pub fn wait_for_and_receive_message(&self) -> Option<Envelope> {
+    pub fn receive_message(&self) -> Option<Envelope> {
         self.receiver.recv().ok()
     }
 
@@ -80,6 +80,10 @@ impl Guard {
 
     pub fn untrack_prisoner(&mut self, name: &String) {
         self.prisoner_need_stats.remove(name);
+    }
+
+    pub fn track_prisoner(&mut self, name: &String) {
+        self.prisoner_need_stats.entry((*name).clone()).or_insert(0);
     }
 
     pub fn tracked_prisoners(&self) -> usize {
