@@ -1,4 +1,4 @@
-# Prisoners
+# Prisoners [![Build Status](https://travis-ci.org/sphinxc0re/prisoners.svg?branch=dev)](https://travis-ci.org/sphinxc0re/prisoners)
 This project is an experiment to test the *concurrency* and *message passing* abilities of the [Rust programming language](https://www.rust-lang.org/). It is mostly a training project for my personal use but feel free to open up issues or fork the project to create your own strategy. You might now think: *Strategy? What is he talking about?*. So, to prevent confusion, I will now explain the problem, I am trying to solve here.
 
 ## The Problem
