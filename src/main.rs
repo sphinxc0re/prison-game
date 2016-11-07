@@ -110,14 +110,14 @@ fn main() {
                                     return_sender.send(envelope).expect("Message could not be sent");
                                 }
                             },
-                            Message::Dead(prisoner_name) => {
+                            Message::Dead { prisoner_name } => {
                                 guar.untrack_prisoner(&prisoner_name);
                                 println!("{} died", prisoner_name);
                                 if guar.tracked_prisoners() == 0 {
                                     break;
                                 }
                             },
-                            Message::Alive(prisoner_name) => {
+                            Message::Alive { prisoner_name } => {
                                 guar.track_prisoner(&prisoner_name);
                                 println!("{} is registered to be alive", prisoner_name);
                             },

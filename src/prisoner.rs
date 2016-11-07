@@ -69,14 +69,14 @@ impl Prisoner {
 
     pub fn broadcast_dead(&self) {
         for ref mut guard in self.guard_map.values().into_iter() {
-            let envelope = Envelope::new(Message::Dead(self.name.clone()), self.get_sender());
+            let envelope = Envelope::new(Message::Dead { prisoner_name: self.name.clone() }, self.get_sender());
             guard.send(envelope).expect("Message could not be sent");
         }
     }
 
     pub fn broadcast_alive(&self) {
         for ref mut guard in self.guard_map.values().into_iter() {
-            let envelope = Envelope::new(Message::Alive(self.name.clone()), self.get_sender());
+            let envelope = Envelope::new(Message::Alive { prisoner_name: self.name.clone() }, self.get_sender());
             guard.send(envelope).expect("Message could not be sent");
         }
     }
