@@ -4,12 +4,10 @@ use std::sync::mpsc::Sender;
 
 #[derive(Debug)]
 pub enum Message {
-    Kill,
-    NoAction,
     Dead { prisoner_name: String },
     Alive { prisoner_name: String },
-    Treatment { need: String, ammount: i8 },
-    Complain { need: String, ammount: i8, prisoner_name: String }
+    Treatment { need: String, amount: i8 },
+    Complaint { need: String, amount: i8 }
 }
 
 #[derive(Debug)]

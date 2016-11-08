@@ -21,14 +21,16 @@ pub struct Prisoner {
     sender: Sender<Envelope>,
     /// The receiver channel of the prisoner, typed
     receiver: Receiver<Envelope>,
+    /// The statistics of the prisoners needs
+    need_map: HashMap<String, i8>
 }
 
 impl Prisoner {
     /// Sends a complaint to the respective guard
     pub fn complain(&self, complaint: Message) {
         match complaint {
-            Message::Complain { ref need, ref ammount, ref prisoner_name } => {
-                let message = Message::Complain { need: need.clone(), ammount: ammount.clone(), prisoner_name: prisoner_name.clone() };
+            Message::Complaint { ref need, ref amount } => {
+                let message = Message::Complaint { need: need.clone(), amount: amount.clone() };
                 let envelope = Envelope::new(message, self.get_sender());
                 self.guard_map[need].send(envelope).unwrap();
             },
@@ -81,6 +83,12 @@ impl Prisoner {
         }
     }
 
+    pub fn track_need(&mut self, need: &String, amount: i8) -> i8 {
+        let mut need_amount = self.need_map.entry((*need).clone()).or_insert(0);
+        *need_amount += amount;
+        *need_amount
+    }
+
     /// Constructs a new `Prisoner`
     ///
     /// # Examples
@@ -91,6 +99,7 @@ impl Prisoner {
         Prisoner {
             name: name.to_string(),
             guard_map: HashMap::new(),
+            need_map: HashMap::new(),
             sender: snd,
             receiver: rec
         }
