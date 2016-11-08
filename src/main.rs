@@ -19,6 +19,8 @@ use std::io::prelude::*;
 use std::sync::{Arc, Barrier};
 
 fn main() {
+    static TREATMENT_RATIO: i8 = 4;
+
     // The amount and type of the prisoners needs as well as the names of the prisoners are
     // configurable through the config.yml file. At this point we have to throw an error to prevent
     // further damage via a corrupted yml file.
@@ -106,7 +108,7 @@ fn main() {
                         let Envelope { return_sender, message } = input_envelope;
                         match message {
                             Message::Complaint { ref need, ref amount } => {
-                                    let envelope = Envelope::new(Message::Treatment { need: (*need).clone(), amount: *amount / 2 }, guar.get_sender());
+                                    let envelope = Envelope::new(Message::Treatment { need: (*need).clone(), amount: *amount / TREATMENT_RATIO }, guar.get_sender());
                                     return_sender.send(envelope).expect("Message could not be sent");
                             },
                             Message::Dead { prisoner_name } => {
