@@ -21,14 +21,17 @@ pub struct Prisoner {
     sender: Sender<Envelope>,
     /// The receiver channel of the prisoner, typed
     receiver: Receiver<Envelope>,
+    /// The statistics of the prisoners needs
+    need_map: HashMap<String, i8>
 }
 
 impl Prisoner {
     /// Sends a complaint to the respective guard
     pub fn complain(&self, complaint: Message) {
         match complaint {
-            Message::Complain(ref need, ref ammount, ref prisoner_name) => {
-                let envelope = Envelope::new(Message::Complain(need.clone(), ammount.clone(), prisoner_name.clone()), self.get_sender());
+            Message::Complaint { ref need, ref amount } => {
+                let message = Message::Complaint { need: need.clone(), amount: amount.clone() };
+                let envelope = Envelope::new(message, self.get_sender());
                 self.guard_map[need].send(envelope).unwrap();
             },
             other => panic!("Prisoner is unable to send message of type: {:?}", other)
@@ -68,16 +71,22 @@ impl Prisoner {
 
     pub fn broadcast_dead(&self) {
         for ref mut guard in self.guard_map.values().into_iter() {
-            let envelope = Envelope::new(Message::Dead(self.name.clone()), self.get_sender());
+            let envelope = Envelope::new(Message::Dead { prisoner_name: self.name.clone() }, self.get_sender());
             guard.send(envelope).expect("Message could not be sent");
         }
     }
 
     pub fn broadcast_alive(&self) {
         for ref mut guard in self.guard_map.values().into_iter() {
-            let envelope = Envelope::new(Message::Alive(self.name.clone()), self.get_sender());
+            let envelope = Envelope::new(Message::Alive { prisoner_name: self.name.clone() }, self.get_sender());
             guard.send(envelope).expect("Message could not be sent");
         }
+    }
+
+    pub fn track_need(&mut self, need: &String, amount: i8) -> i8 {
+        let mut need_amount = self.need_map.entry((*need).clone()).or_insert(0);
+        *need_amount += amount;
+        *need_amount
     }
 
     /// Constructs a new `Prisoner`
@@ -90,6 +99,7 @@ impl Prisoner {
         Prisoner {
             name: name.to_string(),
             guard_map: HashMap::new(),
+            need_map: HashMap::new(),
             sender: snd,
             receiver: rec
         }

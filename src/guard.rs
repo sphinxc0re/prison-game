@@ -1,8 +1,6 @@
-use mp::Message;
 use mp::Envelope;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Receiver;
-use std::collections::HashMap;
 use std::sync::mpsc::Sender;
 
 
@@ -18,7 +16,7 @@ pub struct Guard {
     /// The need, the guard is able to satisfy
     pub need: String,
     /// A map to keep track of the needs of the prisoners
-    prisoner_need_stats: HashMap<String, i8>
+    prisoners: Vec<String>
 }
 
 impl Guard {
@@ -34,7 +32,7 @@ impl Guard {
             sender: snd,
             receiver: rec,
             need: need.to_string(),
-            prisoner_need_stats: HashMap::new()
+            prisoners: Vec::new()
         }
     }
 
@@ -66,27 +64,22 @@ impl Guard {
         self.receiver.recv().ok()
     }
 
-    /// track a prisoners stats per need
-    pub fn track_complaint(&mut self, complaint: &Message) -> i8 {
-        match complaint {
-            &Message::Complain(_, ref ammount, ref prisoner_name) => {
-                let original_ammount = self.prisoner_need_stats.entry((*prisoner_name).clone()).or_insert(0);
-                *original_ammount += *ammount;
-                *original_ammount
-            },
-            _ => unreachable!()
+    pub fn track_prisoner(&mut self, prisoner_name: &String) {
+        if !self.prisoners.contains(prisoner_name) {
+            self.prisoners.push((*prisoner_name).clone());
         }
     }
 
-    pub fn untrack_prisoner(&mut self, name: &String) {
-        self.prisoner_need_stats.remove(name);
+
+    pub fn untrack_prisoner(&mut self, prisoner_name: &String) {
+        if self.prisoners.contains(prisoner_name) {
+            let index = self.prisoners.iter().position(|x| *x == *prisoner_name).unwrap();
+            self.prisoners.remove(index);
+        }
     }
 
-    pub fn track_prisoner(&mut self, name: &String) {
-        self.prisoner_need_stats.entry((*name).clone()).or_insert(0);
-    }
 
     pub fn tracked_prisoners(&self) -> usize {
-        self.prisoner_need_stats.len()
+        self.prisoners.len()
     }
 }
