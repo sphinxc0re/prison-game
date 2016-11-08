@@ -19,7 +19,9 @@ use std::io::prelude::*;
 use std::sync::{Arc, Barrier};
 
 fn main() {
-    // The ammount and type of the prisoners needs as well as the names of the prisoners are
+    static TREATMENT_RATIO: i8 = 4;
+
+    // The amount and type of the prisoners needs as well as the names of the prisoners are
     // configurable through the config.yml file. At this point we have to throw an error to prevent
     // further damage via a corrupted yml file.
     let mut yaml_file = File::open("config.yml").expect("Could not load config.yml file.");
@@ -58,26 +60,32 @@ fn main() {
         // complaints at random to send them to the respective guard to handle it.
         thread::Builder::new().name(prisoner.name.clone() + "_thread").spawn(move|| {
             prisoner.broadcast_alive();
+            println!("{} is registered to be alive", prisoner.name);
             prisoners_barrier.wait();
             loop {
                 let mut rng = rand::thread_rng();
                 let millis = (&mut rng).gen_range(1, 1000);
                 thread::sleep(Duration::from_millis(millis));
-                let ammount = (&mut rng).gen_range(-20, 20);
+                let amount = (&mut rng).gen_range(-20, 20);
                 let need_index = (&mut rng).gen_range(0, need_vec.len());
-                let comp = Message::Complain { need: need_vec[need_index].clone(), ammount: ammount, prisoner_name: prisoner.name.clone() };
+                if prisoner.track_need(&need_vec[need_index], amount).abs() > 100 {
+                    prisoner.broadcast_dead();
+                    println!("{} died", prisoner.name);
+                    break;
+                }
+                let comp = Message::Complaint { need: need_vec[need_index].clone(), amount: amount };
                 prisoner.complain(comp);
+                println!("{} has a need for {} for an amount of {}", prisoner.name.clone(), need_vec[need_index].clone(), amount);
                 let envelope = prisoner.receive_message();
                 match envelope {
                     Some(input_envelope) => {
                         let message = input_envelope.message;
                         match message {
-                            Message::Kill => {
-                                prisoner.broadcast_dead();
-                                break;
+                            Message::Treatment { need, amount } => {
+                                prisoner.track_need(&need, amount * -1);
+                                println!("{}'s need for {} has been treated for an amount of {}", prisoner.name, need, amount);
                             },
-                            Message::NoAction => continue,
-                            other => panic!("Prisoner is unable to handle message of type: {:?}", other)
+                            message => panic!("Unable to handle packet of type: {:?}", message)
                         }
                     },
                     None => unreachable!()
@@ -99,27 +107,18 @@ fn main() {
                     Some(input_envelope) => {
                         let Envelope { return_sender, message } = input_envelope;
                         match message {
-                            Message::Complain { ref need, ref ammount, ref prisoner_name } => {
-                                let new_ammount = guar.track_complaint(&message);
-                                if new_ammount.abs() > 100 {
-                                    let envelope = Envelope::new(Message::Kill, guar.get_sender());
+                            Message::Complaint { ref need, ref amount } => {
+                                    let envelope = Envelope::new(Message::Treatment { need: (*need).clone(), amount: *amount / TREATMENT_RATIO }, guar.get_sender());
                                     return_sender.send(envelope).expect("Message could not be sent");
-                                } else {
-                                    println!("{:?} has a need for {:?} for an ammount of {:?}, total is {:?}", prisoner_name, need, ammount, new_ammount);
-                                    let envelope = Envelope::new(Message::NoAction, guar.get_sender());
-                                    return_sender.send(envelope).expect("Message could not be sent");
-                                }
                             },
-                            Message::Dead(prisoner_name) => {
+                            Message::Dead { prisoner_name } => {
                                 guar.untrack_prisoner(&prisoner_name);
-                                println!("{} died", prisoner_name);
                                 if guar.tracked_prisoners() == 0 {
                                     break;
                                 }
                             },
-                            Message::Alive(prisoner_name) => {
+                            Message::Alive { prisoner_name } => {
                                 guar.track_prisoner(&prisoner_name);
-                                println!("{} is registered to be alive", prisoner_name);
                             },
                             other => panic!("Guard is unable to handle message of type: {:?}", other)
                         }
