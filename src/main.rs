@@ -1,3 +1,7 @@
+//! Prisoners is a Rust concurrency experiment
+
+#![deny(missing_docs)]
+
 extern crate rand;
 extern crate yaml_rust;
 
