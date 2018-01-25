@@ -4,5 +4,5 @@ version = "0.4.0"
 authors = ["Julian Laubstein <julian.laubstein@9elements.com>"]
 
 [dependencies]
-rand = "0.3.14"
-yaml-rust = "0.3.3"
+rand = "0.4.2"
+yaml-rust = "0.4.0"

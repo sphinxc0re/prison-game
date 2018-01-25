@@ -84,7 +84,7 @@ impl Prisoner {
     }
 
     pub fn track_need(&mut self, need: &String, amount: i8) -> i8 {
-        let mut need_amount = self.need_map.entry((*need).clone()).or_insert(0);
+        let need_amount = self.need_map.entry((*need).clone()).or_insert(0);
         *need_amount += amount;
         *need_amount
     }
